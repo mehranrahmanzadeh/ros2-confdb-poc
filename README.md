@@ -1,4 +1,4 @@
-# POC: Remote ROS 2 snap configuration with confdb
+# Remote ROS 2 snap configuration with confdb
 
 ## Summary
 
