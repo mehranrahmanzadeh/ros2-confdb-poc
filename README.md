@@ -36,6 +36,7 @@ Limitations:
 
 The configuration lives in confdb, defined by a signed `confdb-schema`. A remote operator is given access to a view through a `confdb-control` assertion. The `ros2-confdb-bridge` sidecar snap is the view's **custodian**:
 
+- Canonical will package and provide the `ros2-confdb-bridge` sidecar snap; application snap developers do not need to create or package it themselves
 - its `change-view-<plug>` hook validates every proposed change and rejects invalid values
 - its `observe-view-<plug>` hook runs after the change is committed, reads the committed values with `snapctl get --view`, and atomically rewrites the parameters YAML file
 - the file is shared with the application snap through the `content` interface, so `key_teleop` keeps using `--params-file` unchanged.
@@ -118,6 +119,8 @@ The confdb paths map to ROS 2 parameters, converting kebab-case to snake_case:
 | `v1.key-teleop.backward-rate` | `/key_teleop` | `backward_rate` | double |
 | `v1.key-teleop.rotational-rate` | `/key_teleop` | `rotational_rate` | double |
 
+ROS 2 parameters are typed, so Canonical can provide a script that reads an application's existing ROS 2 parameters and generates a corresponding confdb schema. This gives application developers a starting schema from the parameter definitions they already have, reducing the manual effort needed to adopt remote confdb; developers can then review or adjust constraints and views for their application.
+
 Generated file, identical in format to the file the current approach downloads:
 
 ```yaml
@@ -129,6 +132,8 @@ key_teleop:
 ```
 
 ### Snap packaging sketch
+
+The bridge snap shown below is packaged and provided by Canonical. The application snap developer only needs to add the `content` plug shown here; they do not need to implement the bridge hooks or build a sidecar snap.
 
 `ros2-confdb-bridge`:
 
