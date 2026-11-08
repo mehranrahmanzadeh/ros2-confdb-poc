@@ -2,7 +2,7 @@
 
 ## Summary
 
-The Robotics team's current approach, [Configure a snap: pull a configuration from a server](https://canonical-robotics.readthedocs-hosted.com/en/latest/how-to-guides/packaging/config-a-snap-pull-from-a-server/), downloads a ROS 2 parameters YAML file from a web server. The download runs in an `install` hook and then once a day from a timer daemon. This POC replaces application-managed polling with **remote confdb**. Confdb stores an ordered list of YAML sources and output filenames. The `ros2-confdb-bridge` sidecar snap downloads the files, merges sources that target the same output, and makes the resulting parameters file or files available to the ROS 2 application.
+The Robotics team's current approach, [Configure a snap: pull a configuration from a server](https://canonical-robotics.readthedocs-hosted.com/en/latest/how-to-guides/packaging/config-a-snap-pull-from-a-server/), downloads a ROS 2 parameters YAML file from a web server. The download runs in an `install` hook and then once a day from a timer daemon. This POC replaces application-managed polling with **remote confdb**. Confdb stores an ordered list of YAML sources and output filenames. The `ros2-confdb-agent` sidecar snap downloads the files, merges sources that target the same output, and makes the resulting parameters file or files available to the ROS 2 application.
 
 ## Current approach
 
@@ -34,9 +34,9 @@ Limitations:
 
 ## Proposed approach
 
-The `ros2-confdb-bridge` snap owns and provides the signed `confdb-schema`. The schema stores an ordered array of source maps. A remote operator is given access to update the array through a view delegated by a `confdb-control` assertion. The bridge snap is the view's **custodian**:
+The `ros2-confdb-agent` snap owns and provides the signed `confdb-schema`. The schema stores an ordered array of source maps. A remote operator is given access to update the array through a view delegated by a `confdb-control` assertion. The bridge snap is the view's **custodian**:
 
-- Canonical will package and provide the `ros2-confdb-bridge` sidecar snap; application snap developers do not need to create or package it themselves
+- Canonical will package and provide the `ros2-confdb-agent` sidecar snap; application snap developers do not need to create or package it themselves
 - its `change-view-<plug>` hook checks proposed source URLs and output filenames against the configured policy
 - its `observe-view-<plug>` hook runs after the array changes, reads the committed sources with `snapctl get --view`, and downloads the YAML files
 - it groups source maps by `output`, merges each group in array order, and atomically publishes the resulting file
@@ -55,7 +55,7 @@ flowchart LR
             DB[(confdb: teleop-config<br/>ordered sources array)]
         end
 
-        subgraph Bridge[ros2-confdb-bridge snap: custodian]
+        subgraph Bridge[ros2-confdb-agent snap: custodian]
             Change[change-view hook: check maps]
             Observe[observe-view hook: fetch sources]
             Merge[Group by output and merge in array order]
@@ -166,15 +166,15 @@ key_teleop:
     rotational_rate: 1.0
 ```
 
-The bridge downloads each source and writes the merged result to its configured output filename under `$SNAP_COMMON/params`.
+The agent downloads each source and writes the merged result to its configured output filename under `$SNAP_COMMON/params`.
 
 The application continues to own and provide its YAML files. ROS 2 parameter values are not copied into confdb schema fields; confdb controls the ordered source list and where each merged result is written.
 
 ### Snap packaging sketch
 
-The bridge snap shown below is packaged and provided by Canonical, and provides the `teleop-config` schema used by its custodian plug. The application snap developer only needs to add the `content` plug shown here; they do not need to define a confdb schema, implement bridge hooks, or build a sidecar snap.
+The agent snap shown below is packaged and provided by Canonical, and provides the `teleop-config` schema used by its custodian plug. The application snap developer only needs to add the `content` plug shown here; they do not need to define a confdb schema, implement bridge hooks, or build a sidecar snap.
 
-`ros2-confdb-bridge`:
+`ros2-confdb-agent`:
 
 ```yaml
 plugs:
@@ -216,10 +216,10 @@ ros2 run key_teleop key_teleop --ros-args --params-file $SNAP_DATA/params/key_te
 
 ## Comparison
 
-| | Pull from a server | Remote confdb + `ros2-confdb-bridge` |
+| | Pull from a server | Remote confdb + `ros2-confdb-agent` |
 | --- | --- | --- |
 | Update latency | Timer period (daily) plus server cache | Triggered by a source-array or version update |
-| Validation | None; errors appear when the node starts | Confdb validates the array shape; bridge checks downloads and YAML structure before publishing |
+| Validation | None; errors appear when the node starts | Confdb validates the array shape; agent checks downloads and YAML structure before publishing |
 | Per-robot configuration | Separate URL or server logic per robot | Native: each device has its own confdb |
 | Access control | Whoever can write the hosted file | Signed schema and per-view delegation through `confdb-control` |
 | Changes to the application snap | Hook, `curl`, timer daemon, `network` | Content plug only |
