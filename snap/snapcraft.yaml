@@ -1,0 +1,64 @@
+name: ros2-confdb-agent
+base: core24
+version: '0.1.0'
+summary: Download ROS 2 parameter files from confdb sources
+description: |
+  Downloads ROS 2 parameter files from URLs configured through confdb
+  and shares them with application snaps without modifying their contents.
+grade: devel
+confinement: strict
+
+platforms:
+  amd64:
+    build-on: [amd64]
+    build-for: [amd64]
+
+apps:
+  daemon:
+    command: bin/ros2-confdb-agent daemon
+    daemon: simple
+    restart-condition: on-failure
+    plugs: [network, ros2-agent]
+  refresh:
+    command: bin/ros2-confdb-agent refresh
+
+plugs:
+  ros2-agent:
+    interface: confdb
+    account: horOqtT3mHqGKjkijB1sIy7fEjZfhDai
+    view: ros2/agent
+    role: custodian
+  ros2-sources:
+    interface: confdb
+    account: horOqtT3mHqGKjkijB1sIy7fEjZfhDai
+    view: ros2/sources
+    role: custodian
+  ros2-admin:
+    interface: confdb
+    account: horOqtT3mHqGKjkijB1sIy7fEjZfhDai
+    view: ros2/admin
+    role: custodian
+
+slots:
+  ros-params:
+    interface: content
+    content: ros2-confdb-params
+    read:
+      - $SNAP_COMMON/params
+
+hooks:
+  change-view-ros2-sources:
+    plugs: [ros2-sources, ros2-agent]
+  change-view-ros2-admin:
+    plugs: [ros2-admin, ros2-agent]
+  observe-view-ros2-agent:
+    plugs: [ros2-agent]
+
+parts:
+  agent:
+    plugin: go
+    source: .
+    build-packages:
+      - golang-go
+    build-environment:
+      - CGO_ENABLED: '0'

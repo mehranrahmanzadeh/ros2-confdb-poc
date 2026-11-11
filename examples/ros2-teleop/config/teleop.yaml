@@ -1,0 +1,7 @@
+/key_teleop:
+  ros__parameters:
+    hz: 10
+    forward_rate: 0.2
+    backward_rate: 0.1
+    rotation_rate: 0.3
+    twist_stamped_enabled: false

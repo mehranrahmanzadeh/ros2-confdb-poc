@@ -1,0 +1,44 @@
+name: my-ros2-teleop-test
+base: core22
+version: '0.1'
+summary: ROS 2 teleop configured by ros2-confdb-agent
+license: GPL-3.0
+description: |
+  ROS 2 Humble key_teleop example based on canonical/snap_configuration.
+  Reads its parameter file from ros2-confdb-agent through a read-only
+  content connection. Configuration is loaded when the application starts.
+
+grade: devel
+confinement: strict
+
+architectures:
+  - build-on: amd64
+
+plugs:
+  ros2-params:
+    interface: content
+    content: ros2-confdb-params
+    target: $SNAP_COMMON/ros2-params
+    default-provider: ros2-confdb-agent:ros-params
+
+parts:
+  teleop:
+    plugin: colcon
+    source: https://github.com/ros-teleop/teleop_tools.git
+    source-commit: 1fea835523cbad07d93540a94a86647f585a5c35
+    source-subdir: key_teleop
+    stage-packages: [ros-humble-ros2run]
+
+  local-files:
+    plugin: dump
+    source: snap/local/
+    organize:
+      '*.bash': bin/
+
+apps:
+  my-ros2-teleop-test:
+    command: bin/teleop_launcher.bash
+    plugs: [network, network-bind, ros2-params]
+    extensions: [ros2-humble]
+    environment:
+      LD_LIBRARY_PATH: "$LD_LIBRARY_PATH:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/blas:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/lapack"

@@ -1,0 +1,2 @@
+#!/bin/sh
+exec "$SNAP/bin/ros2-confdb-agent" disconnect-hook

@@ -1,0 +1,56 @@
+{
+  "type": "confdb-schema",
+  "name": "ros2",
+  "account-id": "horOqtT3mHqGKjkijB1sIy7fEjZfhDai",
+  "authority-id": "horOqtT3mHqGKjkijB1sIy7fEjZfhDai",
+  "summary": "Configure ROS 2 parameter source downloads",
+  "timestamp": "1970-01-01T00:00:00Z",
+  "views": {
+    "sources": {
+      "summary": "Manage the ordered parameter sources",
+      "rules": [
+        {
+          "request": "sources",
+          "storage": "v1.sources",
+          "access": "read-write"
+        }
+      ]
+    },
+    "admin": {
+      "summary": "Manage download policy and origin credentials",
+      "rules": [
+        {
+          "request": "policy",
+          "storage": "v1.policy",
+          "access": "read-write"
+        },
+        {
+          "request": "credentials",
+          "storage": "v1.credentials",
+          "access": "read-write"
+        }
+      ]
+    },
+    "agent": {
+      "summary": "Read the combined configuration for the agent",
+      "rules": [
+        {
+          "request": "sources",
+          "storage": "v1.sources",
+          "access": "read"
+        },
+        {
+          "request": "policy",
+          "storage": "v1.policy",
+          "access": "read"
+        },
+        {
+          "request": "credentials",
+          "storage": "v1.credentials",
+          "access": "read"
+        }
+      ]
+    }
+  },
+  "body": "{\"storage\":{\"schema\":{\"v1\":{\"schema\":{\"sources\":{\"type\":\"array\",\"values\":{\"schema\":{\"source\":\"string\",\"output\":\"string\",\"version\":\"int\"},\"required\":[\"source\",\"output\",\"version\"]}},\"policy\":{\"schema\":{\"allow-http\":\"bool\",\"allow-https\":\"bool\",\"allowlist-enabled\":\"bool\",\"allowed-hosts\":{\"type\":\"array\",\"values\":\"string\"},\"timeout-seconds\":{\"type\":\"int\",\"min\":1},\"max-source-mib\":{\"type\":\"int\",\"min\":1},\"max-redirects\":{\"type\":\"int\",\"min\":0}}},\"credentials\":{\"type\":\"array\",\"visibility\":\"secret\",\"values\":{\"schema\":{\"origin\":\"string\",\"method\":{\"type\":\"string\",\"choices\":[\"basic\",\"bearer\",\"api-key\"]},\"username\":\"string\",\"secret\":\"string\",\"header\":\"string\"},\"required\":[\"origin\",\"method\",\"secret\"]}}}}}}}"
+}
